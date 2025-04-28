@@ -29,11 +29,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.gson.Gson
 import kotlinx.coroutines.delay
 
 @Composable
-fun Login(navController: NavController, database: AppDatabase) {
+fun Login(navController: NavController, database: AppDatabase, onLoginSuccess: (User) -> Unit) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoggingIn by remember { mutableStateOf(false) }
@@ -46,6 +45,7 @@ fun Login(navController: NavController, database: AppDatabase) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Logo de la aplicación
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo de la aplicación",
@@ -53,24 +53,34 @@ fun Login(navController: NavController, database: AppDatabase) {
                 .size(200.dp)
                 .padding(bottom = 16.dp)
         )
+
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Campo de entrada para el nombre de usuario
         TextField(
             value = username,
             onValueChange = { username = it },
             label = { Text("Username") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
+
         Spacer(modifier = Modifier.height(8.dp))
+
+        // Campo de entrada para la contraseña
         TextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
+
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Mensaje de error si las credenciales son incorrectas
         if (errorMessage.isNotEmpty()) {
             Text(
                 text = errorMessage,
@@ -80,6 +90,8 @@ fun Login(navController: NavController, database: AppDatabase) {
         }
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        // Botón de inicio de sesión
         Button(
             onClick = {
                 if (username.isEmpty() || password.isEmpty()) {
@@ -89,27 +101,34 @@ fun Login(navController: NavController, database: AppDatabase) {
                     isLoggingIn = true
                 }
             },
-            enabled = !isLoggingIn
+            enabled = !isLoggingIn,
+            modifier = Modifier.fillMaxWidth()
         ) {
             if (isLoggingIn) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
             } else {
                 Text(text = "Sign In")
             }
         }
+
         Spacer(modifier = Modifier.height(8.dp))
+
+        // Enlace para registrarse
         TextButton(onClick = { navController.navigate("signup") }) {
             Text(text = "Don't have an account? Sign up here")
         }
     }
 
+    // Lógica de inicio de sesión
     LaunchedEffect(isLoggingIn) {
         if (isLoggingIn) {
-            delay(1500)
+            delay(1500) // Simula una llamada a la base de datos o API
             val user = database.userDao().getUserByUsernameAndPassword(username, password)
             if (user != null) {
-                val userJson = Gson().toJson(user)
-                navController.navigate("home/$userJson")
+                onLoginSuccess(user) // Notifica al padre que el inicio de sesión fue exitoso
             } else {
                 errorMessage = "Incorrect Credentials"
             }

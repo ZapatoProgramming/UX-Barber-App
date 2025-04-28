@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import com.google.gson.Gson
 
 
 @Composable
@@ -38,7 +36,7 @@ fun Home(navController: NavController, user: User, database: AppDatabase) {
         verticalArrangement = Arrangement.Center
     ) {
         if(user.isBarber) {
-            HomeBarber(navController, user, database)
+            HomeBarber(user, database)
         }
         else{
             HomeClient(navController, user, database)
@@ -86,25 +84,19 @@ fun HomeClient(navController: NavController, user: User, database: AppDatabase) 
 
         FloatingActionButton(
             onClick = {
-                val userJson = Gson().toJson(user)
-                navController.navigate("create_appointment/$userJson")
+                navController.navigate("create_appointment")
             },
             modifier = Modifier
                 .padding(16.dp)
         ) {
             Text(text = "+")
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { navController.navigate("login") }) {
-            Text(text = "Cerrar Sesión")
-        }
     }
 
 }
 
 @Composable
-fun HomeBarber(navController: NavController, user: User, database: AppDatabase) {
+fun HomeBarber(user: User, database: AppDatabase) {
     var appointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
     LaunchedEffect(Unit) {
         val dbAppointments = database.appointmentDao().getAppointments()
@@ -139,11 +131,6 @@ fun HomeBarber(navController: NavController, user: User, database: AppDatabase) 
                     AppointmentCard(appointment = appointments[appointment], forBarber = true)
                 }
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { navController.navigate("login") }) {
-            Text(text = "Log Out")
         }
     }
 

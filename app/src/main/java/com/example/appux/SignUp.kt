@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,13 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import com.google.gson.Gson
 import kotlinx.coroutines.delay
-import androidx.compose.foundation.text.KeyboardOptions
 
 @Composable
-fun SignUp(navController: NavController, database: AppDatabase) {
+fun SignUp(
+    database: AppDatabase,
+    onSignUpSuccess: (User) -> Unit
+) {
     var name by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var telephone by remember { mutableStateOf("") }
@@ -62,7 +63,7 @@ fun SignUp(navController: NavController, database: AppDatabase) {
         TextField(
             value = lastName,
             onValueChange = { lastName = it },
-            label = { Text("Last name") },
+            label = { Text("Last Name") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -93,7 +94,7 @@ fun SignUp(navController: NavController, database: AppDatabase) {
         TextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
-            label = { Text("Confirm password") },
+            label = { Text("Confirm Password") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth()
@@ -127,10 +128,12 @@ fun SignUp(navController: NavController, database: AppDatabase) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                if (name.isEmpty() || lastName.isEmpty() || telephone.isEmpty() || username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+                if (name.isEmpty() || lastName.isEmpty() || telephone.isEmpty() ||
+                    username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()
+                ) {
                     errorMessage = "Please fill all the fields"
                 } else if (password != confirmPassword) {
-                    errorMessage = "Passwords does not match"
+                    errorMessage = "Passwords do not match"
                 } else if (!acceptTerms) {
                     errorMessage = "You must accept terms and conditions"
                 } else {
@@ -150,7 +153,7 @@ fun SignUp(navController: NavController, database: AppDatabase) {
 
     LaunchedEffect(isRegistering) {
         if (isRegistering) {
-            delay(2000)
+            delay(2000) // Simula una llamada a la base de datos o API
             val existingUser = database.userDao().getUserByUsername(username)
             if (existingUser != null) {
                 errorMessage = "The username is already in use"
@@ -164,8 +167,7 @@ fun SignUp(navController: NavController, database: AppDatabase) {
                     isBarber = isBarber
                 )
                 database.userDao().insertUser(user)
-                val userJson = Gson().toJson(user)
-                navController.navigate("home/$userJson")
+                onSignUpSuccess(user) // Notifica al padre que el registro fue exitoso
             }
             isRegistering = false
         }
