@@ -83,14 +83,14 @@ fun ServiceDetailsView(navController: NavController, serviceName: String) {
         "Haircut" -> mapOf(
             "Buzz Cut" to R.drawable.buzz_cut,
             "Quiff" to R.drawable.quiff,
-            "CR7" to R.drawable.cr71,
+            "CR7" to R.drawable.cr7,
             "Shag" to R.drawable.shag
         )
         "Beard Trim" -> mapOf(
-            "Option A" to null,
-            "Option B" to null,
-            "Option C" to null,
-            "Option D" to null
+            "Stubble" to R.drawable.stubble,
+            "Short" to R.drawable.shortt,
+            "Long" to R.drawable.lonng,
+            "Contour edging" to R.drawable.contour
         )
         "Hair Treatment" -> mapOf(
             "Basic" to null,
@@ -99,10 +99,10 @@ fun ServiceDetailsView(navController: NavController, serviceName: String) {
             "Luxury" to null
         )
         "Hair Dye" -> mapOf(
-            "Blonde" to null,
-            "Brunette" to null,
-            "Red" to null,
-            "Black" to null
+            "Blonde" to R.drawable.blond,
+            "Brunette" to R.drawable.brunette,
+            "Red" to R.drawable.red,
+            "Black" to R.drawable.black
         )
         else -> emptyMap()
     }
