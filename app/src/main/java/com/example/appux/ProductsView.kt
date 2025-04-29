@@ -83,7 +83,7 @@ fun ServiceDetailsView(navController: NavController, serviceName: String) {
         "Haircut" -> mapOf(
             "Buzz Cut" to R.drawable.buzz_cut,
             "Quiff" to R.drawable.quiff,
-            "CR7" to R.drawable.cr7,
+            "CR7" to R.drawable.cr71,
             "Shag" to R.drawable.shag
         )
         "Beard Trim" -> mapOf(
