@@ -81,10 +81,10 @@ fun ServiceCard(serviceName: String, icon: ImageVector, onClick: () -> Unit) {
 fun ServiceDetailsView(navController: NavController, serviceName: String) {
     val serviceOptions: Map<String, Int?> = when (serviceName) {
         "Haircut" -> mapOf(
-            "Buzz Cut" to null,
-            "Quiff" to null,
-            "CR7" to null,
-            "Nazario" to null
+            "Buzz Cut" to R.drawable.buzz_cut,
+            "Quiff" to R.drawable.quiff,
+            "CR7" to R.drawable.cr7,
+            "Shag" to R.drawable.shag
         )
         "Beard Trim" -> mapOf(
             "Option A" to null,
