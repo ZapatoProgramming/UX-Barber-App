@@ -31,3 +31,4 @@ fun ProfileView(navController: NavController, user: User, database: AppDatabase)
         }
     }
 }
+

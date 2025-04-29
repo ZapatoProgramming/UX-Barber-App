@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,8 +98,35 @@ class MainActivity : ComponentActivity() {
                             // Usar el usuario guardado en el estado global
                             Home(navController, currentUser!!, database)
                         }
-                        composable("create_appointment") {
-                            CreateAppointment(navController, currentUser!!, database)
+                        composable(
+                            "create_appointment?selectedServices={selectedServices}&specifications={specifications}",
+                            arguments = listOf(
+                                navArgument("selectedServices") {
+                                    type = NavType.StringType
+                                    defaultValue = "" // Valor predeterminado si no se pasa ningún argumento
+                                },
+                                navArgument("specifications") {
+                                    type = NavType.StringType
+                                    defaultValue = "" // Valor predeterminado si no se pasa ningún argumento
+                                }
+                            )
+                        ) { backStackEntry ->
+                            // Recuperar los argumentos pasados
+                            val selectedServices = backStackEntry.arguments?.getString("selectedServices")
+                                ?.split(",")
+                                ?.filter { it.isNotEmpty() } // Convertir a lista y filtrar elementos vacíos
+                                ?: emptyList()
+
+                            val specifications = backStackEntry.arguments?.getString("specifications") ?: ""
+
+                            // Llamar a CreateAppointment con los valores recuperados
+                            CreateAppointment(
+                                navController = navController,
+                                user = currentUser!!,
+                                database = database,
+                                initialServices = selectedServices,
+                                initialSpecifications = specifications
+                            )
                         }
                         composable("profile") {
                             ProfileView(navController = navController, currentUser!!, database)
@@ -106,7 +135,23 @@ class MainActivity : ComponentActivity() {
                             SettingsView()
                         }
                         composable("products") {
-                            ProductsView(navController = navController, currentUser!!, database)
+                            ProductsView(navController)
+                        }
+
+                        composable(
+                            "service_details/{serviceName}",
+                            arguments = listOf(navArgument("serviceName") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val serviceName = backStackEntry.arguments?.getString("serviceName") ?: ""
+                            ServiceDetailsView(navController, serviceName)
+                        }
+
+                        composable(
+                            "hair_dye_details/{color}",
+                            arguments = listOf(navArgument("color") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val color = backStackEntry.arguments?.getString("color") ?: ""
+                            HairDyeDetailsView(color, navController)
                         }
                     }
                 }

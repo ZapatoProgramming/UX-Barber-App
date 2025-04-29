@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Timer
 import java.text.SimpleDateFormat
@@ -24,11 +23,13 @@ import java.util.Locale
 fun CreateAppointment(
     navController: NavController,
     user: User,
-    database: AppDatabase
+    database: AppDatabase,
+    initialServices: List<String> = emptyList(), // Servicios seleccionados inicialmente (por defecto, lista vacía)
+    initialSpecifications: String = "" // Especificaciones iniciales (por defecto, cadena vacía)
 ) {
     var currentStep by remember { mutableIntStateOf(1) }
-    var selectedService by remember { mutableStateOf("") }
-    var specifications by remember { mutableStateOf("") }
+    var selectedServices by remember { mutableStateOf(initialServices) } // Inicializa con initialServices
+    var specifications by remember { mutableStateOf(initialSpecifications) } // Inicializa con initialSpecifications
     var selectedDateTime by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
@@ -42,22 +43,20 @@ fun CreateAppointment(
     ) {
         when (currentStep) {
             1 -> ServiceSelectionStep(
-                selectedService = selectedService,
-                onServiceSelected = { selectedService = it },
+                selectedServices = selectedServices,
+                onServicesSelected = { selectedServices = it },
                 specifications = specifications,
-                onSpecificationsChanged = { specifications = it },
+                onSpecificationsChanged = { newSpecifications -> specifications = newSpecifications },
                 onNextClicked = { currentStep = 2 },
-                navController
+                navController = navController
             )
             2 -> DateTimeSelectionStep(
-                onDateTimeChanged = { dateTime ->
-                    selectedDateTime = dateTime
-                },
+                onDateTimeChanged = { dateTime -> selectedDateTime = dateTime },
                 onNextClicked = { currentStep = 3 },
                 onBackClicked = { currentStep = 1 }
             )
             3 -> ConfirmationStep(
-                selectedService = selectedService,
+                selectedServices = selectedServices,
                 specifications = specifications,
                 dateTime = selectedDateTime,
                 onConfirmClicked = {
@@ -65,7 +64,7 @@ fun CreateAppointment(
                         val newAppointment = Appointment(
                             userId = user.id,
                             userName = user.name,
-                            serviceType = selectedService,
+                            serviceType = selectedServices.joinToString(", "), // Combina los servicios seleccionados
                             specifications = specifications,
                             dateTime = selectedDateTime
                         )
@@ -81,70 +80,77 @@ fun CreateAppointment(
 
 @Composable
 fun ServiceSelectionStep(
-    selectedService: String,
-    onServiceSelected: (String) -> Unit,
-    specifications: String,
-    onSpecificationsChanged: (String) -> Unit,
-    onNextClicked: () -> Unit,
-    navController: NavController
+    selectedServices: List<String>, // Lista de servicios seleccionados inicialmente
+    onServicesSelected: (List<String>) -> Unit, // Callback para notificar cambios en los servicios seleccionados
+    specifications: String, // Especificaciones iniciales
+    onSpecificationsChanged: (String) -> Unit, // Callback para notificar cambios en las especificaciones
+    onNextClicked: () -> Unit, // Acción al hacer clic en "Next"
+    navController: NavController // Controlador de navegación
 ) {
     val serviceOptions = listOf("Haircut", "Beard Trim", "Hair Dye", "Hair Treatment")
     val defaultColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) // Color grisáceo
     val selectedColor = MaterialTheme.colorScheme.primary
 
-    var expanded by remember { mutableStateOf(false) }
+    // Estado para los servicios seleccionados
+    var selectedServicesState by remember { mutableStateOf(selectedServices.toSet()) }
+
+    fun updateSelectedServices(newService: String, isChecked: Boolean) {
+        val updatedServices = if (isChecked) {
+            selectedServicesState + newService // Agregar el servicio
+        } else {
+            selectedServicesState - newService // Eliminar el servicio
+        }
+        selectedServicesState = updatedServices // Actualizar el estado con una nueva colección inmutable
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        Text(text = "Select a service", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = "Select services",
+            style = MaterialTheme.typography.titleMedium
+        )
         Spacer(modifier = Modifier.height(8.dp))
 
-        Box {
-            Button(
-                onClick = { expanded = true },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedService.isEmpty()) defaultColor else selectedColor
-                )
+        // Lista de checkboxes para los servicios
+        serviceOptions.forEach { service ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = selectedService.ifEmpty { "Select a Service" },
-                        modifier = Modifier.weight(1f),
-                        color = if (selectedService.isEmpty()) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Open dropdown menu",
-                        tint = LocalContentColor.current.copy(alpha = 0.38f)
-                    )
-                }
-            }
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                serviceOptions.forEach { service ->
-                    DropdownMenuItem(
-                        text = { Text(service) },
-                        onClick = {
-                            onServiceSelected(service)
-                            expanded = false
+                Checkbox(
+                    checked = selectedServicesState.contains(service),
+                    onCheckedChange = { isChecked ->
+                        if (isChecked) {
+                            updateSelectedServices(service, true)
+                        } else {
+                            updateSelectedServices(service, false)
                         }
+                        onServicesSelected(selectedServicesState.toList()) // Notifica cambios al padre
+                    },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = selectedColor,
+                        uncheckedColor = defaultColor
                     )
-                }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = service,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
         TextField(
             value = specifications,
-            onValueChange = onSpecificationsChanged,
+            onValueChange = onSpecificationsChanged, // Notifica cambios en las especificaciones
             label = { Text("Specifications") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -156,13 +162,14 @@ fun ServiceSelectionStep(
             }
             Button(
                 onClick = onNextClicked,
-                enabled = selectedService.isNotEmpty() // Enable next only if a service is selected
+                enabled = selectedServicesState.isNotEmpty() // Habilitar "Next" solo si hay servicios seleccionados
             ) {
                 Text(text = "Next")
             }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -334,22 +341,46 @@ fun Dial(
 
 @Composable
 fun ConfirmationStep(
-    selectedService: String,
-    specifications: String,
-    dateTime: String,
-    onConfirmClicked: () -> Unit,
-    onBackClicked: () -> Unit
+    selectedServices: List<String>, // Lista de servicios seleccionados
+    specifications: String, // Especificaciones ingresadas por el usuario
+    dateTime: String, // Fecha y hora seleccionada
+    onConfirmClicked: () -> Unit, // Acción al hacer clic en "Confirm"
+    onBackClicked: () -> Unit // Acción al hacer clic en "Back"
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        Text(text = "Confirmation", style = MaterialTheme.typography.titleLarge)
+        Text(
+            text = "Confirmation",
+            style = MaterialTheme.typography.titleLarge
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Service: $selectedService")
-        Text(text = "Specifications: $specifications")
-        Text(text = "Date and Time: $dateTime")
+        // Mostrar los servicios seleccionados
+        Text(
+            text = "Services:",
+            style = MaterialTheme.typography.titleMedium
+        )
+        selectedServices.forEach { service ->
+            Text(
+                text = "- $service",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Specifications: $specifications",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            text = "Date and Time: $dateTime",
+            style = MaterialTheme.typography.bodyMedium
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
